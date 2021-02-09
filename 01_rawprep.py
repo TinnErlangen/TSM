@@ -3,13 +3,13 @@ import numpy as np
 import mne
 
 # define basic directories for file locations (adjust to your needs)
-base_dir = "D:/XXX_analyses/"
-raw_dir = base_dir+"XXX_raw/"   # where to find the original raw files
-proc_dir = base_dir+"proc/"    # location for saving processed data files
+base_dir = "C:/Users/schmitae/Desktop/Anne/TSM_SOMA/Analysis_TSM/MEG_Data/"
+raw_dir = base_dir+"raw/"   # where to find the original raw files
+proc_dir = base_dir+"preproc/"    # location for saving processed data files
 
 # set up your lists for subjects and runs (BTI raw files are saved in runs in separate folders)
-subjs = ["XXX_01","XXX_02",]
-runs = ["1","2","3",]
+subjs = ["nc_TSM_01"]
+runs = ["1","2","3","4"]
 # create new lists, if you want to try things on single subjects or runs
 
 # define frequencies to apply notch filter to (electricity, monitor etc.)
