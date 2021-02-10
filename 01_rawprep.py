@@ -8,7 +8,7 @@ raw_dir = base_dir+"raw/"   # where to find the original raw files
 proc_dir = base_dir+"preproc/"    # location for saving processed data files
 
 # set up your lists for subjects and runs (BTI raw files are saved in runs in separate folders)
-subjs = ["nc_TSM_01"]
+subjs = ["nc_TSM_01","nc_TSM_03"]
 runs = ["1","2","3","4"]
 # create new lists, if you want to try things on single subjects or runs
 
@@ -36,11 +36,10 @@ for sub in subjs:
                 rawmeg_events[i_idx,2]=rawmeg_events[i_idx,2]-4095
         # apply the notch filter (remember, we had an online 1.0Hz high-pass filter applied already during the measurement)
         picks = mne.pick_types(rawmeg.info, meg=True,ref_meg=True)  # we do it also on ref channels, so select ref_meg=True, (for combined ICA later)
-        rawmeg.notch_filter(notches,picks=picks,n_jobs="cuda",notch_widths=breadths) #cuda is for use of GPU for processing, if not available on your machine, leave out
+        rawmeg.notch_filter(notches,picks=picks,n_jobs=4,notch_widths=breadths) #cuda is for use of GPU for processing, if not available on your machine, leave out
         # resample, giving desired sample rate; pass the event list to keep original event time points (!)
-        rawmeg,rawmeg_events = rawmeg.resample(200,events=rawmeg_events,n_jobs="cuda") #see above for cuda
-        meg_events = rawmeg_events
+        rawmeg,rawmeg_events = rawmeg.resample(200,events=rawmeg_events,n_jobs=4) #see above for cuda
         # saving the event array as a numpy file
-        np.save(proc_dir+sub+"_"+run+"_events.npy",meg_events)
+        np.save(proc_dir+sub+"_"+run+"_events.npy",rawmeg_events)
         # save the filtered and resampled data as -raw.fif file
         rawmeg.save(proc_dir+sub+"_"+run+"-raw.fif",overwrite=True)
