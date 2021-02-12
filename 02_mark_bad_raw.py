@@ -10,14 +10,35 @@ import numpy as np
 plt.ion() #this keeps plots interactive
 
 # define file locations
-proc_dir = "D:/XXX/proc/"
+proc_dir = "C:/Users/schmitae/Desktop/Anne/TSM_SOMA/TSM_Analyse/MEG_Data/preproc/"
 # pass subject and run lists
-subjs = ["XXX_01","XXX_02",]
-runs = ["1","3"]
+subjs = ["nc_TSM_01"]
+runs = ["2"]
 # create new lists, if you want to try things on single subjects or runs
 
 #dictionary with conditions/triggers for plotting
-event_id = {'rest': 220,}
+event_id_old = {'Block1': 200,'Block2':220}
+event_id = {'Anspannung': 60,'Entspannung':80}
+cond_seq = {'nc_TSM_01': 1}    #1 = Anspannung zuerst; 2 = Entspannung zuerst
+
+#Korrektur der Triggerzuschreibung in SOMA-Block 2
+for sub in subjs:
+    events_old = np.load("{dir}{sub}_2_events.npy".format(dir=proc_dir,sub=sub))
+    events = events_old.copy()
+    if cond_seq[sub] == 1:
+        for i in range(events.shape[0]):
+            if events[i][2] == 200:
+                events[i][2] = 60
+            if events[i][2] == 220:
+                events[i][2] = 80
+    if cond_seq[sub] == 2:
+        for i in range(events.shape[0]):
+            if events[i][2] == 200:
+                events[i][2] = 80
+            if events[i][2] == 220:
+                events[i][2] = 60
+    np.save("{dir}{sub}_2_events_old.npy".format(dir=proc_dir,sub=sub),events_old)
+    np.save("{dir}{sub}_2_events.npy".format(dir=proc_dir,sub=sub),events)
 
 # collecting the files for annotation into a list
 filelist = []
