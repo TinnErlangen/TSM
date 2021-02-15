@@ -1,0 +1,75 @@
+# This script creates a Cycler object to loop over your raw data to mark bad segments
+# Run this file from command line with '-i' for interactive mode
+# Then use the cyc.go() command each time to pop the next file in the list for inspection and annotation - then use cyc.save() when done
+# ...then cyc.go() again for the next file... until the list is empty
+
+import mne
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.ion() #this keeps plots interactive
+
+# define file locations
+proc_dir = "C:/Users/schmitae/Desktop/Anne/TSM_SOMA/TSM_Analyse/MEG_Data/proc/"
+# pass subject and run lists
+subjs = ["nc_TSM_01","nc_TSM_02","nc_TSM_03","nc_TSM_04","nc_TSM_05","nc_TSM_06","nc_TSM_07","nc_TSM_08","nc_TSM_09","nc_TSM_10","nc_TSM_11","nc_TSM_12","nc_TSM_13","nc_TSM_15","nc_TSM_16","nc_TSM_17","nc_TSM_18","nc_TSM_19","nc_TSM_20","nc_TSM_21","nc_TSM_22","nc_TSM_23","nc_TSM_24","nc_TSM_26","nc_TSM_27"]
+runs = ["2"]
+# create new lists, if you want to try things on single subjects or runs
+
+#dictionary with conditions/triggers for plotting
+event_id_old = {'Block1': 200,'Block2':220}
+event_id = {'Anspannung': 60,'Entspannung':80}
+cond_seq = {'nc_TSM_01': 1,'nc_TSM_02': 1,'nc_TSM_03': 2,'nc_TSM_04': 2,'nc_TSM_05': 1,'nc_TSM_06': 1,'nc_TSM_07': 2,'nc_TSM_08': 2,'nc_TSM_09': 1,'nc_TSM_10': 1,'nc_TSM_11': 2,'nc_TSM_12': 2,'nc_TSM_13': 1,'nc_TSM_15': 2,'nc_TSM_16': 2,'nc_TSM_17': 1,'nc_TSM_18': 1,'nc_TSM_19': 2,'nc_TSM_20': 2,'nc_TSM_21': 1,'nc_TSM_22': 1,'nc_TSM_23': 2,'nc_TSM_24': 2,'nc_TSM_26': 1,'nc_TSM_27': 1}    #1 = Anspannung zuerst; 2 = Entspannung zuerst
+
+#Korrektur der Triggerzuschreibung in SOMA-Block 2
+for sub in subjs:
+    events_old = np.load("{dir}{sub}_2_events.npy".format(dir=proc_dir,sub=sub))
+    events = events_old.copy()
+    if cond_seq[sub] == 1:
+        for i in range(events.shape[0]):
+            if events[i][2] == 200:
+                events[i][2] = 60
+            if events[i][2] == 220:
+                events[i][2] = 80
+    if cond_seq[sub] == 2:
+        for i in range(events.shape[0]):
+            if events[i][2] == 200:
+                events[i][2] = 80
+            if events[i][2] == 220:
+                events[i][2] = 60
+    np.save("{dir}{sub}_2_events_old.npy".format(dir=proc_dir,sub=sub),events_old)
+    np.save("{dir}{sub}_2_events.npy".format(dir=proc_dir,sub=sub),events)
+
+# collecting the files for annotation into a list
+filelist = []
+for sub in subjs:
+    for run in runs:
+        filelist.append('{dir}{sub}_{run}-raw.fif'.format(dir=proc_dir,sub=sub,run=run))
+
+#definition of cycler object to go through the file list for annotation
+class Cycler():
+
+    def __init__(self,filelist):
+        self.filelist = filelist    # when initializing the object, the filelist is collected
+
+    def go(self):
+        self.fn = self.filelist.pop(0)    # this pops the first raw file from the list
+        self.raw = mne.io.Raw(self.fn)
+        self.events = np.load(self.fn[:-8]+"_events.npy")   # and loads the events
+        self.raw.plot(duration=15.0,n_channels=90,scalings=dict(mag=0.5e-12),events=self.events,event_id=event_id)    #  these parameters work well for inspection, but change to your liking (works also interactively during plotting)
+        self.raw.plot_psd(fmax=95)    # we also plot the PSD, which is helpful to spot bad channels
+
+    def plot(self,n_channels=90):
+        self.raw.plot(duration=15.0,n_channels=90,scalings=dict(mag=0.5e-12),events=self.events,event_id=event_id)
+
+    def show_file(self):
+        print("Current Raw File: " + self.fn)    # use this to find out which subject/run we're looking at currently
+
+    def save(self):
+        self.raw.save(self.fn[:-8]+'_m-raw.fif')   # important: save the annotated file in the end !
+
+cyc = Cycler(filelist)
+
+
+# Tipps: click on bad channels to mark them (they're easily spotted from the PSD plot); press 'a' to switch in annotation mode and drag the mouse over 'BAD' segments to mark with that label
+# important: close the plot to save the markings! - then do cyc.save() to save the file
